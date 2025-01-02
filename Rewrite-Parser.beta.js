@@ -332,6 +332,7 @@ if (binaryInfo != null && binaryInfo.length > 0) {
 
   if (bodyRewrite) {
     for await (let [y, x] of bodyRewrite.match(/[^\r\n]+/g).entries()) {
+      if (/^(#|;|\/\/)\s*/.test(x)) continue
       const [_, type, regex, value] = x.match(/^((?:http-request|http-response)(?:-jq)?)\s+?(.*?)\s+?(.*?)$/)
       rwbodyBox.push({ type, regex, value })
     }
@@ -554,7 +555,7 @@ if (binaryInfo != null && binaryInfo.length > 0) {
         const jqPath = value.match(/jq-path="(.+?)"/)?.[1]
         if (jqPath) {
           if (/^https?:\/\//.test(jqPath)) {
-            value = `'${(await $.http.get(jqPath)).body.replace(/^#.*$/gm, '').replace(/$\r?\n/gm, ' ')}'`
+            value = `'${(await http(jqPath, reqHeaders)).body.replace(/^\s*#.*$/gm, '').replace(/$\r?\n/gm, ' ')}'`
           } else {
             value = undefined
             const e = `暂不支持本地 JQ 文件:\n${x}`
@@ -1887,7 +1888,7 @@ function getModInfo(x) {
 
 //获取可莉图标集
 async function getIcon(icon) {
-  let url = 'https://gitlab.com/lodepuly/iconlibrary/-/raw/main/KeLee_icon.json'
+  let url = 'https://raw.githubusercontent.com/luestr/IconResource/main/KeLee_icon.json'
   let kicon = $.getjson('Parser_Kelee_icon')
   if (!kicon) {
     kicon = $.toObj((await http(url)).body)['icons']
